@@ -12,9 +12,9 @@
     <OutputFileName>$(MSBuildProjectName)</OutputFileName>
     <OutputFileExtension>.elf</OutputFileExtension>
     <OutputDirectory>$(MSBuildProjectDirectory)\$(Configuration)</OutputDirectory>
-    <AssemblyName>ATmega328P-Timer-Stopwatch</AssemblyName>
-    <Name>ATmega328P-Timer-Stopwatch</Name>
-    <RootNamespace>ATmega328P-Timer-Stopwatch</RootNamespace>
+    <AssemblyName>ATmega328P-Timer</AssemblyName>
+    <Name>ATmega328P-Timer</Name>
+    <RootNamespace>ATmega328P-Timer</RootNamespace>
     <ToolchainFlavour>Native</ToolchainFlavour>
     <KeepTimersRunning>true</KeepTimersRunning>
     <OverrideVtor>false</OverrideVtor>
@@ -118,6 +118,8 @@
   <avrgcc.assembler.debugging.DebugLevel>Default (-Wa,-g)</avrgcc.assembler.debugging.DebugLevel>
 </AvrGcc>
     </ToolchainSettings>
+    <OutputFileName>main</OutputFileName>
+    <OutputFileExtension>.elf</OutputFileExtension>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="main.c">

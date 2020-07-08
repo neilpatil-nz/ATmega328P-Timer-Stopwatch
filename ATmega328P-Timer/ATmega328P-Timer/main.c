@@ -96,31 +96,28 @@ int main(void) {
 		switch (count)
 		{
 			case 1:
-			PORTC = 0b0000100;
-			PORTB = 0b1;
+			num_one();
 			CLR_LED_1;
 			SET_LED_2;
 			SET_LED_3;
 			break;
 			
 			case 2:
-			PORTC = 0b111010;
-			PORTB = 0b1;
+			num_two();
 			CLR_LED_1;
 			SET_LED_2;
 			SET_LED_3;
 			break;
 			
 			case 3:
-			PORTC = 0b111100;
-			PORTB = 0b1;
+			num_three();
 			CLR_LED_1;
 			SET_LED_2;
 			SET_LED_3;
 			break;
 			
 			case 4:
-			
+			num_four();
 			CLR_LED_1;
 			SET_LED_2;
 			SET_LED_3;
@@ -162,8 +159,7 @@ int main(void) {
 			break;
 			
 			default:
-			PORTC = 0b0101111;
-			PORTB = 0b1;
+			num_zero();
 			CLR_LED_1;
 			SET_LED_2;
 			SET_LED_3;
@@ -185,7 +181,22 @@ int main(void) {
     } //while end
 } //main end
 /***** Functions *****/
-
+void num_zero(){
+	PORTC = 0b0101111;
+	PORTB = 0b1;
+}
+void num_one(){
+	PORTC = 0b0000100;
+	PORTB = 0b1;
+}
+void num_two(){
+	PORTC = 0b111010;
+	PORTB = 0b1;
+}
+void num_three(){
+	PORTC = 0b111100;
+	PORTB = 0b1;
+}
 void num_four(){
 	PORTC = 0b0010101;
 	PORTB = 0b1;
