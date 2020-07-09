@@ -1,3 +1,5 @@
 # Auto detect text files and perform LF normalization
 * text=auto
- *.makefile linguist-language=C
+ * linguist-vendored
+*.mk linguist-vendored=false
+*.d linguist-vendored=false
