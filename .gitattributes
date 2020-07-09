@@ -1,6 +1,4 @@
 # Auto detect text files and perform LF normalization
 * text=auto
- * linguist-vendored
 *.mk linguist-vendored=C
 *.d linguist-vendored=C
-*.c linguist-vendored=C
