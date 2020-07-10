@@ -43,15 +43,37 @@
 /***** User macros *****/
 #define DEL_TIME 5
 #define ALARM_DEL_TIME 100
+
+/***** States *****/
+#define PAUSE 0
+#define RUN 1
+#define DEFAULT 2
+#define TIMER 3
+#define ALERT 4
+
+
 /***** Declare & initialise global variables *****/
 
 uint8_t i =0;
 uint16_t count = 300;
-uint8_t alarm_state = 0;
+uint8_t state_clock = RUN;
+uint8_t state_setting = DEFAULT;
 
 /***** Interrupt Service Routines *****/
  ISR(TIMER1_COMPA_vect){
-	 count++;
+	 if (state_clock == RUN){
+		count++;
+	 }
+ }
+ ISR(INT0_vect){
+	 if (state_clock == PAUSE){
+		 state_clock = RUN;
+	 }
+	 else{
+		 state_setting = DEFAULT;
+		 state_clock = PAUSE;
+	 }
+	 
  }
  
 /***** Prototypes  for Functions *****/
@@ -79,18 +101,29 @@ int main(void) {
 	DDRD |= (1 << PD5);
 	DDRD |= (1 << PD4);
 	DDRD |= (1 << PD1);
+	
 	DDRB |= (1 << PB1); //setup OC1A pin (B1) as output
 
+	/***** External Interrupt Setup *****/
+	DDRD &=~ (1 << PD2);
+	PORTD |= (1 << PD2);//Interrupt0 
+	
+	//EICRA |= (1 <<  ISC00);
+	EICRA |= (1 <<  ISC01);
+	EIMSK |= (1 << INT0);
+	
 	/***** Timer Config *****/
 	TCCR1B |= (1 << WGM12); // CTC mode
 	TCCR1A |= (1 << COM1A0); // toggle OC1A (B1 )output on match
 	TCCR1B |= (1 << CS12); // Prescaler /256
 	OCR1A = 62499;
 	TIMSK1 |= (1 << OCIE1A);
+	sei(); 
 	 
+	/***** LED Segment Ouput *****/ 
 	DDRC = 0xff;
 	DDRB = 0xff;
-	sei(); 
+	
     // configure the internal pullup resistors for these pins
 
     /***** Main variables go here *****/
@@ -101,8 +134,9 @@ int main(void) {
     while (1) {
 		CLR_ALARM;
 		if (count == 320){
-			alarm_state = 1;
-			while(alarm_state == 1){
+			state_clock = PAUSE;
+			state_setting = ALERT;
+			while(state_setting == ALERT){
 				SET_ALARM;
 				_delay_ms(ALARM_DEL_TIME);
 				CLR_ALARM;
