@@ -1,6 +1,6 @@
 /***** Project Header *****/
 // Project Name:
-// Version: 1.1
+// Version: 1.4
 // Author: Neil Patil
 
 
@@ -22,8 +22,10 @@
 /***** Hardware macros *****/
 //Hardware macros for outputs
 
-#define SET_ALARM PORTD |= (1<<PD1)
+#define SET_ALARM PORTD |= (1<<PD1) 
 #define CLR_ALARM PORTD &= ~(1<<PD1)
+
+//Hardware macros for LED Segments
 
 #define CLR_LED_1   PORTD |= (1<<PD6)
 #define SET_LED_1   PORTD &= ~(1<<PD6)
@@ -37,11 +39,12 @@
 #define CLR_LED_4   PORTD |= (1<<PD7)
 #define SET_LED_4   PORTD &= ~(1<<PD7)
 
+//Hardware macros for LEDs
+
 #define SET_DEFAULT_LED PORTB |= (1<<PB4)
 #define CLR_DEFAULT_LED PORTB &=~ (1<<PB4)
 
-#define SET_TIMER_LED PORTB |= (1<<PB3)
-#define CLR_TIMER_LED PORTB &=~ (1<<PB3)
+//Hardware macros for inputs
 
 #define ADD_SWITCH_IS_HIGH PINB & (1<<PB5)
 #define ADD_SWITCH_IS_LOW ~PINB & (1<<PB5)
@@ -49,24 +52,22 @@
 #define MINUS_SWITCH_IS_HIGH PIND & (1<<PD0)
 #define MINUS_SWITCH_IS_LOW ~PIND & (1<<PD0)
 
-//Hardware macros for inputs
-//Hardware macros for ADC inputs
+#define CLEAR_SWITCH_IS_HIGH PINB & (1<<PB3)
+#define CLEAR_SWITCH_IS_LOW ~PINB & (1<<PB3)
 
 /***** User macros *****/
 #define DEL_TIME 2
 #define ALARM_DEL_TIME 100
 
 /***** States *****/
-#define PAUSE 0
-#define RUN 1
-#define DEFAULT 2
-#define TIMER 3
-#define ALERT 4
+#define PAUSE 0 // Blocks increments of count
+#define RUN 1 // Allows increments of count
+#define DEFAULT 2 // Initial Stopwatch Mode
+#define TIMER 3 // Timer Mode
+#define ALERT 4 // When Triggered
 
 
 /***** Declare & initialise global variables *****/
-
-uint8_t i = 0;
 volatile uint16_t count = 0;
 volatile uint16_t timer_count = 0;
 volatile uint8_t state_clock = RUN;
@@ -78,11 +79,12 @@ volatile uint8_t state_setting = DEFAULT;
 		count++;
 	 }
  }
- ISR(INT0_vect){
+ /***** Changes State *****/
+ ISR(INT0_vect){ 
 	 if (state_clock == PAUSE){
 		 state_clock = RUN;
 	 }
-	 else if (state_setting == ALERT){
+	 else if (state_setting == ALERT){ //Stops Alert
 		 state_clock = PAUSE;
 		 state_setting = TIMER;
 		 count = 0;
@@ -90,27 +92,36 @@ volatile uint8_t state_setting = DEFAULT;
 	 else {
 		 state_clock = PAUSE;
 	 }
-	 
  }
+ /***** Changes Mode (Timer/Stopwatch) *****/
  ISR(INT1_vect){
 	 if (state_setting == DEFAULT){
 		state_setting = TIMER;
 		count = 0;
 		CLR_DEFAULT_LED;
-		SET_TIMER_LED;
 	 }
 	 else{
 		 state_setting = DEFAULT;
 		 SET_DEFAULT_LED;
-		 CLR_TIMER_LED;
 	 }
 	 state_clock = PAUSE;
 	 count = 0;
  }
  
+ISR(PCINT0_vect){
+	if (CLEAR_SWITCH_IS_LOW){
+	count = 0;
+	}
+}
+
+ 
 /***** Prototypes  for Functions *****/
+
+/***** Displays Segments *****/
 void disp_function();
 void call_num();
+
+/***** Displays given number *****/
 void num_zero();
 void num_one();
 void num_two();
@@ -121,7 +132,6 @@ void num_six();
 void num_seven();
 void num_eight();
 void num_nine();
-
 
 /***** Main function *****/
 int main(void) {
@@ -138,7 +148,8 @@ int main(void) {
 	DDRB |= (1 << PB1); //setup OC1A pin (B1) as output
 
 	
-	
+	DDRB &=~ (1 << PB3);
+	PORTB |= (1<<PB3);
 	
 	/***** External Interrupt Setup *****/
 	DDRD &=~ (1 << PD2);
@@ -148,12 +159,15 @@ int main(void) {
 	EICRA |= (1 <<  ISC11)|(1 <<  ISC10);
 	EIMSK |= (1 << INT0)|(1 << INT1);
 	
+	PCICR |= (1 <<  PCIE0);
+	PCMSK0 |= (1 << PCINT3);
+	
 	/***** Timer Config *****/
 	TCCR1B |= (1 << WGM12); // CTC mode
-	TCCR1A |= (1 << COM1A0); // toggle OC1A (B1 )output on match
+	TCCR1A |= (1 << COM1A0); // toggle OC1A (B1)output for every 1 sec
 	TCCR1B |= (1 << CS12); // Prescaler /256
 	OCR1A = 62499;
-	TIMSK1 |= (1 << OCIE1A);
+	TIMSK1 |= (1 << OCIE1A); // Triggers Interrupt0
 	sei(); 
 	 
 	/***** LED Segment Ouput *****/ 
@@ -161,25 +175,26 @@ int main(void) {
 	DDRB = 0xff;
 	
 	/***** Pin Inputs *****/
-	DDRB |= (1 << PB5);
+	//Add Pin
+	DDRB &=~ (1 << PB5);
 	PORTB |= (1<<PB5);
-	
+	//Minus Pin
 	DDRD &=~ (1<<PD0);
 	PORTD |= (1<<PD0);
-
+	//Clear Pin
 	
     // configure the internal pullup resistors for these pins
+	
+    
 
-    /***** Main variables go here *****/
+    /***** Initial states of Buzzer, Mode LEDs *****/
 	CLR_ALARM;
 	SET_DEFAULT_LED;
-	CLR_TIMER_LED;
-    /***** Run once code goes here *****/
-
+	
+	
     /***** Loop code *****/
     while (1) {
-		
-		if (state_setting == DEFAULT){
+		if (state_setting == DEFAULT){ // Initial Stopwatch phase
 			disp_function(count);
 		}
 		else if (state_setting == TIMER && state_clock == RUN) {
@@ -205,13 +220,10 @@ int main(void) {
 			else if (MINUS_SWITCH_IS_LOW && timer_count !=0){
 				timer_count--;
 				disp_function(timer_count);
-			}
-			
+			}	
 		}
-		
-		
-    } //while end
-} //main end
+    } 
+} 
 /***** Functions *****/
 void disp_function(uint16_t count_input){
 	_delay_ms(DEL_TIME);
@@ -252,7 +264,7 @@ void disp_function(uint16_t count_input){
 	CLR_LED_3;
 	CLR_LED_4;
 }
-
+// Selects which number to output
 void call_num(uint16_t count_input){
 	switch (count_input)
 	{
