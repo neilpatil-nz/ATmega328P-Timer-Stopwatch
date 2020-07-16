@@ -1,5 +1,5 @@
 /***** Project Header *****/
-// Project Name:
+// Project Name: Stopwatch and Timer
 // Version: 1.4
 // Author: Neil Patil
 
@@ -20,7 +20,8 @@
 #include <avr/interrupt.h>
 
 /***** Hardware macros *****/
-//Hardware macros for outputs
+
+//Hardware macro for alarm
 
 #define SET_ALARM PORTD |= (1<<PD1) 
 #define CLR_ALARM PORTD &= ~(1<<PD1)
@@ -41,10 +42,10 @@
 
 //Hardware macros for LEDs
 
-#define SET_DEFAULT_LED PORTB |= (1<<PB4)
-#define CLR_DEFAULT_LED PORTB &=~ (1<<PB4)
+#define SET_DEFAULT_LED PORTB |= (1<<PB4) //Turns ON the Default LED
+#define CLR_DEFAULT_LED PORTB &=~ (1<<PB4) //Turns ON the Timer LED
 
-//Hardware macros for inputs
+//Hardware macros for input switches
 
 #define ADD_SWITCH_IS_HIGH PINB & (1<<PB5)
 #define ADD_SWITCH_IS_LOW ~PINB & (1<<PB5)
@@ -75,11 +76,11 @@ volatile uint8_t state_setting = DEFAULT;
 
 /***** Interrupt Service Routines *****/
  ISR(TIMER1_COMPA_vect){
-	 if (state_clock == RUN){
+	 if (state_clock == RUN){ //exact 1 sec increment
 		count++;
 	 }
  }
- /***** Changes State *****/
+ /***** Changes State (Stop/Continue Incrementing)*****/
  ISR(INT0_vect){ 
 	 if (state_clock == PAUSE){
 		 state_clock = RUN;
@@ -95,7 +96,7 @@ volatile uint8_t state_setting = DEFAULT;
  }
  /***** Changes Mode (Timer/Stopwatch) *****/
  ISR(INT1_vect){
-	 if (state_setting == DEFAULT){
+	 if (state_setting == DEFAULT){ 
 		state_setting = TIMER;
 		count = 0;
 		CLR_DEFAULT_LED;
@@ -108,9 +109,10 @@ volatile uint8_t state_setting = DEFAULT;
 	 count = 0;
  }
  
+ //Resets count
 ISR(PCINT0_vect){
 	if (CLEAR_SWITCH_IS_LOW){
-	count = 0;
+		count = 0;
 	}
 }
 
@@ -139,30 +141,35 @@ int main(void) {
 
     /***** IO Hardware Config *****/
     // configure these pins as outputs
-	DDRD |= (1 << PD7);
-	DDRD |= (1 << PD6);
-	DDRD |= (1 << PD5);
-	DDRD |= (1 << PD4);
-	DDRD |= (1 << PD1);
+	DDRD |= (1 << PD7); //LED Segment Display 4
+	DDRD |= (1 << PD4); //LED Segment Display 3
+	DDRD |= (1 << PD5); //LED Segment Display 2
+	DDRD |= (1 << PD6); //LED Segment Display 1
+	
+	DDRD |= (1 << PD1); //Alarm Setup
 	
 	DDRB |= (1 << PB1); //setup OC1A pin (B1) as output
-
-	
-	DDRB &=~ (1 << PB3);
-	PORTB |= (1<<PB3);
 	
 	/***** External Interrupt Setup *****/
-	DDRD &=~ (1 << PD2);
-	PORTD |= (1 << PD2);//Interrupt0 
+	DDRD &=~ (1 << PD2);//Interrupt0 
+	PORTD |= (1 << PD2);
 	
-	EICRA |= (1 <<  ISC00)|(1 <<  ISC01);
+	DDRD &=~ (1 << PD3);//Interrupt1 
+	PORTD |= (1 << PD3);
+	
+	DDRB &=~ (1 << PB3);//PCInterrupt0
+	PORTB |= (1<<PB3);
+	
+	//Interrupt0 and Interrupt1 (Rising Edge)
+	EICRA |= (1 <<  ISC00)|(1 <<  ISC01); 
 	EICRA |= (1 <<  ISC11)|(1 <<  ISC10);
 	EIMSK |= (1 << INT0)|(1 << INT1);
 	
+	//Pin 3 Interrupt Setup
 	PCICR |= (1 <<  PCIE0);
 	PCMSK0 |= (1 << PCINT3);
 	
-	/***** Timer Config *****/
+	/***** Timer Config (Exact 1 sec increment)*****/
 	TCCR1B |= (1 << WGM12); // CTC mode
 	TCCR1A |= (1 << COM1A0); // toggle OC1A (B1)output for every 1 sec
 	TCCR1B |= (1 << CS12); // Prescaler /256
@@ -181,29 +188,23 @@ int main(void) {
 	//Minus Pin
 	DDRD &=~ (1<<PD0);
 	PORTD |= (1<<PD0);
-	//Clear Pin
-	
-    // configure the internal pullup resistors for these pins
-	
-    
 
-    /***** Initial states of Buzzer, Mode LEDs *****/
+    /***** Initial states of Buzzer and Mode LEDs *****/
 	CLR_ALARM;
 	SET_DEFAULT_LED;
-	
 	
     /***** Loop code *****/
     while (1) {
 		if (state_setting == DEFAULT){ // Initial Stopwatch phase
 			disp_function(count);
 		}
-		else if (state_setting == TIMER && state_clock == RUN) {
+		// Timer Mode while its incrementing
+		else if (state_setting == TIMER && state_clock == RUN) { 
 			disp_function(count);
-			if (count == timer_count){
-				state_clock = PAUSE;
-				state_setting = ALERT;
-				while(state_setting == ALERT){
-					
+			if (count == timer_count){ //Triggers Alarm
+				state_clock = PAUSE; //Pauses the system
+				state_setting = ALERT; //Alarm state
+				while(state_setting == ALERT){ // >//= Button is required to change state
 					SET_ALARM;
 					_delay_ms(ALARM_DEL_TIME);
 					CLR_ALARM;
@@ -211,6 +212,7 @@ int main(void) {
 				}
 			}
 		}
+		// In Timer Mode while incrementing
 		else if (state_setting == TIMER && state_clock == PAUSE){
 			disp_function(timer_count);
 			if (ADD_SWITCH_IS_LOW){
@@ -225,7 +227,11 @@ int main(void) {
     } 
 } 
 /***** Functions *****/
+
+//Multiplexes through each LED segment display
 void disp_function(uint16_t count_input){
+	
+	// 10 minute 
 	_delay_ms(DEL_TIME);
 	call_num(count_input / 600);
 	CLR_LED_1;
@@ -233,7 +239,7 @@ void disp_function(uint16_t count_input){
 	CLR_LED_3;
 	SET_LED_4;
 	
-	
+	// 1 minute
 	_delay_ms(DEL_TIME);
 	call_num((count_input % 600)/60);
 	CLR_LED_1;
@@ -241,7 +247,7 @@ void disp_function(uint16_t count_input){
 	SET_LED_3;
 	CLR_LED_4;
 	
-	
+	// 10 second
 	_delay_ms(DEL_TIME);
 	if ((count_input % 60)/10 >= 6){
 		call_num(0);
@@ -257,6 +263,8 @@ void disp_function(uint16_t count_input){
 		CLR_LED_3;
 		CLR_LED_4;
 	}
+	
+	// 1 second
 	_delay_ms(DEL_TIME);
 	call_num(count_input % 10);
 	SET_LED_1;
@@ -264,6 +272,7 @@ void disp_function(uint16_t count_input){
 	CLR_LED_3;
 	CLR_LED_4;
 }
+
 // Selects which number to output
 void call_num(uint16_t count_input){
 	switch (count_input)
@@ -309,6 +318,7 @@ void call_num(uint16_t count_input){
 	}
 }
 
+// Turns ON certain LED segments
 void num_zero(){
 	PORTC = 0b0101111;
 	PORTB |= (1 << PB0)|(1 << PB2);
