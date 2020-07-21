@@ -23,8 +23,8 @@
 
 //Hardware macro for alarm
 
-#define SET_ALARM PORTD |= (1<<PD1) 
-#define CLR_ALARM PORTD &= ~(1<<PD1)
+#define SET_ALARM PORTB |= (1<<PB5) 
+#define CLR_ALARM PORTB &= ~(1<<PB5)
 
 //Hardware macros for LED Segments
 
@@ -47,8 +47,8 @@
 
 //Hardware macros for input switches
 
-#define ADD_SWITCH_IS_HIGH PINB & (1<<PB5)
-#define ADD_SWITCH_IS_LOW ~PINB & (1<<PB5)
+#define ADD_SWITCH_IS_HIGH PIND & (1<<PD1)
+#define ADD_SWITCH_IS_LOW ~PIND & (1<<PD1)
 
 #define MINUS_SWITCH_IS_HIGH PIND & (1<<PD0)
 #define MINUS_SWITCH_IS_LOW ~PIND & (1<<PD0)
@@ -138,7 +138,7 @@ void num_nine();
 /***** Main function *****/
 int main(void) {
     /***** Initial hardware setups go here *****/
-
+	
     /***** IO Hardware Config *****/
     // configure these pins as outputs
 	DDRD |= (1 << PD7); //LED Segment Display 4
@@ -146,23 +146,31 @@ int main(void) {
 	DDRD |= (1 << PD5); //LED Segment Display 2
 	DDRD |= (1 << PD6); //LED Segment Display 1
 	
-	DDRD |= (1 << PD1); //Alarm Setup
-	
 	DDRB |= (1 << PB1); //setup OC1A pin (B1) as output
 	
+	/***** Pin Inputs *****/
+	
+	//Add Pin
+	PORTB |= (1<<PD1);
+	
+	//Minus Pin
+	PORTD |= (1<<PD0);
+	
 	/***** External Interrupt Setup *****/
-	DDRD &=~ (1 << PD2);//Interrupt0 
+	//Interrupt0 
+	
 	PORTD |= (1 << PD2);
 	
-	DDRD &=~ (1 << PD3);//Interrupt1 
+	//Interrupt1 
+	
 	PORTD |= (1 << PD3);
 	
-	DDRB &=~ (1 << PB3);//PCInterrupt0
+	//PCInterrupt0
 	PORTB |= (1<<PB3);
 	
 	//Interrupt0 and Interrupt1 (Rising Edge)
-	EICRA |= (1 <<  ISC00)|(1 <<  ISC01); 
-	EICRA |= (1 <<  ISC11)|(1 <<  ISC10);
+	EICRA |= (1 <<  ISC01)|(1 <<  ISC01); 
+	EICRA |= (1 <<  ISC11)|(1 <<  ISC01);
 	EIMSK |= (1 << INT0)|(1 << INT1);
 	
 	//Pin 3 Interrupt Setup
@@ -176,19 +184,9 @@ int main(void) {
 	OCR1A = 62499;
 	TIMSK1 |= (1 << OCIE1A); // Triggers Interrupt0
 	sei(); 
-	 
-	/***** LED Segment Ouput *****/ 
+	
 	DDRC = 0xff;
 	DDRB = 0xff;
-	
-	/***** Pin Inputs *****/
-	//Add Pin
-	DDRB &=~ (1 << PB5);
-	PORTB |= (1<<PB5);
-	//Minus Pin
-	DDRD &=~ (1<<PD0);
-	PORTD |= (1<<PD0);
-
     /***** Initial states of Buzzer and Mode LEDs *****/
 	CLR_ALARM;
 	SET_DEFAULT_LED;
