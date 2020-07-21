@@ -1,6 +1,6 @@
 /***** Project Header *****/
 // Project Name: Stopwatch and Timer
-// Version: 1.4
+// Version: Final
 // Author: Neil Patil
 
 
@@ -56,9 +56,12 @@
 #define CLEAR_SWITCH_IS_HIGH PINB & (1<<PB3)
 #define CLEAR_SWITCH_IS_LOW ~PINB & (1<<PB3)
 
+//Interrupt Pins
+
 /***** User macros *****/
 #define DEL_TIME 2
 #define ALARM_DEL_TIME 100
+#define POLLING_DEL_TIME 1
 
 /***** States *****/
 #define PAUSE 0 // Blocks increments of count
@@ -82,6 +85,7 @@ volatile uint8_t state_setting = DEFAULT;
  }
  /***** Changes State (Stop/Continue Incrementing)*****/
  ISR(INT0_vect){ 
+	 _delay_ms(POLLING_DEL_TIME);
 	 if (state_clock == PAUSE){
 		 state_clock = RUN;
 	 }
@@ -96,6 +100,7 @@ volatile uint8_t state_setting = DEFAULT;
  }
  /***** Changes Mode (Timer/Stopwatch) *****/
  ISR(INT1_vect){
+	  _delay_ms(POLLING_DEL_TIME);
 	 if (state_setting == DEFAULT){ 
 		state_setting = TIMER;
 		count = 0;
@@ -107,6 +112,7 @@ volatile uint8_t state_setting = DEFAULT;
 	 }
 	 state_clock = PAUSE;
 	 count = 0;
+	
  }
  
  //Resets count
@@ -168,9 +174,9 @@ int main(void) {
 	//PCInterrupt0
 	PORTB |= (1<<PB3);
 	
-	//Interrupt0 and Interrupt1 (Rising Edge)
-	EICRA |= (1 <<  ISC01)|(1 <<  ISC01); 
-	EICRA |= (1 <<  ISC11)|(1 <<  ISC01);
+	//Interrupt0 and Interrupt1 (Falling Edge)
+	EICRA |= (1 <<  ISC01); 
+	EICRA |= (1 <<  ISC11);
 	EIMSK |= (1 << INT0)|(1 << INT1);
 	
 	//Pin 3 Interrupt Setup
