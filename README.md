@@ -20,7 +20,7 @@ The `main.c` is only required, as such it can be compiled in your favourite IDE 
 Recent Implementation - Capacitors
 ------------
 
-1 nF Capacitors were recently added in parallel with the interrupt switches due to polling issues brought on by using mechanical switches. Since often or not, clicking on the mechanical switch would cause slight repeated voltage changes accross the pins, making the state of the system unstable. By adding the capacitor in parallal with the switch inputs, the voltage going into the microcontroller cannot change as fast, thus preventing the unstable states.
+1 nF Capacitors were recently added in parallel with the interrupt switches due to polling issues brought on by using mechanical switches. Since often or not, clicking on the mechanical switch would cause slight repeated voltage changes across the pins, making the state of the system unstable. By adding the capacitor in parallel with the switch inputs, the voltage going into the microcontroller cannot change as fast, thus preventing the unstable states.
 
 Timer1 Setup
 ------------
