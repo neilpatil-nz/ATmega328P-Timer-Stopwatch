@@ -1,7 +1,7 @@
 # ATmega328P-Timer-Stopwatch
 
 <p align="center">
-  <img src="https://imgur.com/aX9Tsk4.jpg" width="700" alt="accessibility text">
+  <img src="https://imgur.com/aX9Tsk4.jpg" width="200" alt="accessibility text">
 </p>
 
 A Timer/Stopwatch project that is based on a simple 1 second counter implemented to an ATmega328P. The limition of only having four 7-segment displays, means that the max time it can display is 99 minutes with 60 seconds, even though the counter can go up to 1092 minutes due to being a 16 bit unsigned variable.
